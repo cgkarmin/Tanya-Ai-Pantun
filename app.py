@@ -1,9 +1,8 @@
 import streamlit as st
 import pandas as pd
+import pyttsx3
 import time
-from gtts import gTTS
 import os
-from playsound import playsound
 import speech_recognition as sr
 
 # Muat naik fail pantun yang telah dibersihkan
@@ -25,16 +24,10 @@ def cari_pantun(kata_kunci, df):
     return hasil
 
 def bercakap(teks):
-    """Menggunakan gTTS untuk menukar teks kepada audio dan memainkan suara menggunakan Streamlit"""
-    tts = gTTS(text=teks, lang='ms')
-    audio_file = "pantun_audio.mp3"
-    tts.save(audio_file)
-
-    # Gunakan Streamlit untuk mainkan audio
-    st.audio(audio_file, format="audio/mp3")
-
-    # Padam fail selepas dimainkan
-    os.remove(audio_file)
+    """Menggunakan pyttsx3 untuk menukar teks kepada audio dan memainkan suara"""
+    engine = pyttsx3.init()
+    engine.say(teks)
+    engine.runAndWait()
 
 # Streamlit UI
 st.title("📜 Tanya AI Pantun")
