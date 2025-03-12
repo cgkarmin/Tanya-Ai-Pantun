@@ -2,5 +2,4 @@ streamlit
 pandas
 gtts
 pygame
-playsound
 speechrecognition
