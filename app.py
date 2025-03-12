@@ -1,9 +1,9 @@
 import streamlit as st
 import pandas as pd
-import pygame
 import time
 from gtts import gTTS
 import os
+from playsound import playsound
 import speech_recognition as sr
 
 # Muat naik fail pantun yang telah dibersihkan
@@ -13,9 +13,6 @@ def load_data():
     """Memuatkan database pantun"""
     try:
         df = pd.read_csv(FILE_PATH)
-        if df.empty:
-            st.error("⚠ Database kosong! Sila periksa fail CSV.")
-            return None
         return df
     except FileNotFoundError:
         st.error("❌ Database pantun tidak ditemui!")
@@ -28,33 +25,27 @@ def cari_pantun(kata_kunci, df):
     return hasil
 
 def bercakap(teks):
-    """Menggunakan gTTS untuk menukar teks kepada audio dan memainkan suara"""
-    pygame.mixer.init()
+    """Menggunakan gTTS untuk menukar teks kepada audio dan memainkan suara menggunakan Streamlit"""
     tts = gTTS(text=teks, lang='ms')
-    tts.save("pantun_audio.mp3")
+    audio_file = "pantun_audio.mp3"
+    tts.save(audio_file)
 
-    # Paparkan proses audio sedang dimuatkan
-    with st.spinner("🔊 Sedang menyediakan audio..."):
-        pygame.mixer.music.load("pantun_audio.mp3")
-        pygame.mixer.music.play()
-        while pygame.mixer.music.get_busy():
-            time.sleep(1)
+    # Gunakan Streamlit untuk mainkan audio
+    st.audio(audio_file, format="audio/mp3")
 
-    pygame.mixer.quit()
-    os.remove("pantun_audio.mp3")
-
-def reset_audio():
-    """Reset pygame mixer"""
-    pygame.mixer.quit()
-    pygame.mixer.init()
+    # Padam fail selepas dimainkan
+    os.remove(audio_file)
 
 # Streamlit UI
 st.title("📜 Tanya AI Pantun")
 st.write("Masukkan kata kunci untuk mencari pantun berdasarkan tema, jenis, atau isi pantun.")
 
+# Inisialisasi session_state jika belum ada
+if "kata_kunci" not in st.session_state:
+    st.session_state.kata_kunci = ""
+
 # Butang Reset di bahagian atas untuk reset carian dan audio
 if st.button("🔄", help="Reset Carian"):
-    reset_audio()
     st.session_state.kata_kunci = ""
     st.rerun()
 
@@ -70,9 +61,8 @@ if df is not None:
                 audio = recognizer.listen(source, timeout=5)
                 st.session_state.kata_kunci = recognizer.recognize_google(audio, language='ms')
                 st.success(f"👤 Anda bertanya: **{st.session_state.kata_kunci}**")
-                reset_audio()  # Reset audio sebelum mencari pantun
             except sr.UnknownValueError:
-                st.warning("❌ Maaf, saya tidak dapat mendengar dengan jelas.")
+                st.warning("❌ Maaf, saya tidak dapat mendengar dengan jelas.") # Kembalikan error asal
             except sr.RequestError:
                 st.error("❌ Ralat sistem suara! Sila cuba semula.")
     else:
@@ -90,14 +80,12 @@ if df is not None:
                 jenis = row.get('Jenis', 'Tidak diketahui')
                 markah = row.get('Markah', 'Tidak diketahui')
 
-                # Paparan pantun dalam format tersusun
                 st.write(f"**Pantun:**\n{pantun_tersusun}")
                 st.write(f"**Pemantun:** {pemantun}")
                 st.write(f"**Tema:** {tema}")
                 st.write(f"**Jenis:** {jenis}")
                 st.write(f"**Markah:** {markah}")
 
-                # Butang untuk memainkan audio pantun
                 if st.button(f"🔊 Dengar Pantun {index}", key=f"audio_{index}"):
                     st.write("⏳ Menyediakan audio...")
                     start_time = time.time()
